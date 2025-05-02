@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from pypdf import PdfReader
 import re
 import copy
-import csv
 import os, fnmatch
 import pandas as pd
 import plotly.figure_factory as ff
@@ -67,20 +66,6 @@ def convert_df(df):
    return df.to_csv(index=False).encode('utf-8')
 
 
-
-def write_into_csv(csv_fname, report_date, student_name,
-                   roadmap_matches, test_total, test_marks
-                  ):
-
-    with open(csv_fname, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([report_date])
-        writer.writerow([student_name])
-        writer.writerow(['Module Lesson', 'Total', 'Score', 'Percentage'])  # Header row
-        for n, t, s in zip(roadmap_matches, test_total, test_marks):
-            writer.writerow([n, t, s, 100*s/t])
-        writer.writerow(['Total', np.sum(test_marks/test_total)])
-
 def main():
     # Intro Messages
     st.title("Tarbiyah Grader")
@@ -115,7 +100,7 @@ def main():
             num_missed = len(np.argwhere(test_marks == 0))
 
             frac_completed_modules[std_ind] = 100 * (total_lessons - num_missed )/ total_lessons
-#            write_into_csv(csv_fname, report_date, student_name,roadmap_matches, test_total, test_marks)
+
         totals = np.array(totals)
         
         df_full_data = {'Name': names}
