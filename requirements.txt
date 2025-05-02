@@ -2,7 +2,6 @@ streamlit
 matplotlib
 pandas
 numpy
-pypdf
-re
+pypdf[full]
 csv
 plotly
