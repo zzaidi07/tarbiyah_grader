@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 from pypdf import PdfReader
 import re
 import copy
