@@ -1,6 +1,4 @@
 import streamlit as st
-import matplotlib.pyplot as plt
-import numpy as np
 from pypdf import PdfReader
 import re
 import copy
@@ -9,7 +7,7 @@ import os, fnmatch
 import pandas as pd
 import plotly.figure_factory as ff
 import plotly.express as px
-
+import numpy as np
 def parse_roadmap(roadmap_file = 'roadmap.pdf'):
     
     reader = PdfReader(roadmap_file)
@@ -116,7 +114,7 @@ def main():
             num_missed = len(np.argwhere(test_marks == 0))
 
             frac_completed_modules[std_ind] = 100 * (total_lessons - num_missed )/ total_lessons
-            write_into_csv(csv_fname, report_date, student_name,roadmap_matches, test_total, test_marks)
+#            write_into_csv(csv_fname, report_date, student_name,roadmap_matches, test_total, test_marks)
         totals = np.array(totals)
         
         df_full_data = {'Name': names}
