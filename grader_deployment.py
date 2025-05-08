@@ -8,16 +8,30 @@ import pandas as pd
 import plotly.figure_factory as ff
 import plotly.express as px
 import numpy as np
-def parse_roadmap(roadmap_file = 'roadmap.pdf'):
-    
-    reader = PdfReader(roadmap_file)
-    pattern = r'\d[A-Z]-\d{2}'
-    roadmap_matches = []
-    page = reader.pages[1]
-    for page in reader.pages:
-        text = page.extract_text()
-        roadmap_matches += re.findall(pattern, text)
+from stqdm import stqdm
 
+    
+
+def parse_roadmap(roadmap_file = 'roadmap.pdf'):
+    reader = PdfReader(roadmap_file)
+    consolidated_roadmap = ''
+    date_matches = []
+    for page in range(reader.get_num_pages()):
+        consolidated_roadmap += reader.pages[page].extract_text()
+    date_pattern = r'\b[A-Za-z]+(?:\. ?| ?\.?| )?\d+\/'
+    date_matches += re.findall(date_pattern, consolidated_roadmap)
+    refined_date_matches = [] 
+    for match in date_matches:
+        if "LessonPlan" not in match:
+            refined_date_matches += [match.split('/')[0]]
+    return consolidated_roadmap, refined_date_matches
+
+def extract_roadmap_modules(consolidated_roadmap, start_date, end_date):
+    start_date_line = consolidated_roadmap.find(start_date)
+    end_date_line = consolidated_roadmap.find(end_date)
+    filtered_roadmap = consolidated_roadmap[start_date_line : end_date_line]
+    module_pattern = r'\d[A-Z]-\d{2}'
+    roadmap_matches = re.findall(module_pattern, filtered_roadmap)
     lessons = []
     module_names = []
 
@@ -75,19 +89,42 @@ def main():
     
     # Upload roadmap
     uploaded_roadmap = st.file_uploader("Upload Roadmap", accept_multiple_files = False, type = "pdf")
+
+    if 'consolidated_roadmap' not in st.session_state:
+        st.session_state.consolidated_roadmap = None
+    
+    if 'refined_date_matches' not in st.session_state:
+        st.session_state.refined_date_matches = None
+    
+    
+    if (st.button("Analyze Roadmap")):
+        consolidated_roadmap, refined_date_matches = parse_roadmap(uploaded_roadmap)
+        st.session_state.consolidated_roadmap = consolidated_roadmap
+        st.session_state.refined_date_matches = refined_date_matches
+    
+    st.text("Roadmap Analyzed")
+
+    start_date = st.selectbox("Analysis Start Date", st.session_state.refined_date_matches)
+    end_date = st.selectbox("Analysis End Date", st.session_state.refined_date_matches)
+
+    
     # Upload student reports
     std_fnames = st.file_uploader("Upload (Multiple) Student PDF reports", accept_multiple_files=True, type="pdf")
     
+        
     if (st.button("Analyze")):
+        
         # Parse roadmap
-        module_names, lessons, roadmap_matches = parse_roadmap(uploaded_roadmap)
+        #module_names, lessons, roadmap_matches = extract_roadmap_modules(st.session_state.consolidated_roadmap, st.session_state.refined_date_matches[0], st.session_state.refined_date_matches[-1])        
+        module_names, lessons, roadmap_matches = extract_roadmap_modules(st.session_state.consolidated_roadmap, start_date, end_date)        
+        
         total_lessons = int(len(roadmap_matches))
         names = []
         scores = np.zeros([len(std_fnames), len(module_names)])
         totals = []
         frac_completed_modules = np.zeros(len(std_fnames))
         
-        for std_ind, std_fname in enumerate(std_fnames):
+        for std_ind, std_fname in enumerate(stqdm(std_fnames)):
             csv_fname = std_fname.name.strip('.pdf') + '.csv'
             
             # Parse student report and extract relevant information

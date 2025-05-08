@@ -3,3 +3,4 @@ matplotlib
 numpy
 pypdf[full]
 plotly
+stqdm
