@@ -101,8 +101,9 @@ def main():
         consolidated_roadmap, refined_date_matches = parse_roadmap(uploaded_roadmap)
         st.session_state.consolidated_roadmap = consolidated_roadmap
         st.session_state.refined_date_matches = refined_date_matches
+        st.text("Roadmap Analyzed")
+
     
-    st.text("Roadmap Analyzed")
 
     start_date = st.selectbox("Analysis Start Date", st.session_state.refined_date_matches)
     end_date = st.selectbox("Analysis End Date", st.session_state.refined_date_matches)
