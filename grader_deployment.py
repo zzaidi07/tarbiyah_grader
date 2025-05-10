@@ -62,8 +62,14 @@ def parse_student_record(record_name, module_names, lessons):
         current_lesson_ln = text_module.find(lesson)
         next_lesson_ln = text_module.find(next_lesson)
         text_lesson = text_module[current_lesson_ln:next_lesson_ln]
-        incomplete_check = text_lesson.find("incomplete")
         matches = re.findall(r'\b\d+/\d+\b', text_lesson)
+        
+        if len(matches) != 0:
+            match_line = text_lesson.find(matches[-1])
+            incomplete_check = text_lesson[match_line:].find("incomplete")
+        else:
+            incomplete_check = -1
+        
         if len(matches) == 0 or incomplete_check != -1:
             test_total[lesson_ind] = 5
             test_marks[lesson_ind] = 0
@@ -162,14 +168,10 @@ def main():
         
         plot_df = pd.DataFrame({"Percentage Module Completion": frac_completed_modules})
         
-#        fig = px.histogram(pd.DataFrame({"A":[1,1,1,2,2,3,3,3,4,4,4,5]}),x="A", 
-#text_auto=True)
-#fig.show()
-        fig = px.histogram(plot_df)
 
-#        fig = px.histogram(frac_completed_modules, x = "% Module Completion", y = "# Students")
+        fig = px.histogram(plot_df, nbins = 5, barmode = 'group', title = 'Module Completion %')
 
-        # Plot!
+
         st.text("Visualization of completed modules in your class")
 
         st.plotly_chart(fig)
