@@ -101,28 +101,33 @@ def main():
     
     if 'refined_date_matches' not in st.session_state:
         st.session_state.refined_date_matches = None
-    
+        
+    if 'sbox_index' not in st.session_state:
+        st.session_state.sbox_index = 0
     
     if (st.button("Analyze Roadmap")):
         consolidated_roadmap, refined_date_matches = parse_roadmap(uploaded_roadmap)
         st.session_state.consolidated_roadmap = consolidated_roadmap
         st.session_state.refined_date_matches = refined_date_matches
+        st.session_state.sbox_index = len(refined_date_matches) - 1 
         st.text("Roadmap Analyzed")
+    
+    start_date = st.selectbox("Analysis Start Date", st.session_state.refined_date_matches)
+    end_date = st.selectbox("Analysis End Date (excluding)", st.session_state.refined_date_matches, 
+                            index = st.session_state.sbox_index)
+    
 
     
 
-    start_date = st.selectbox("Analysis Start Date", st.session_state.refined_date_matches)
-    end_date = st.selectbox("Analysis End Date", st.session_state.refined_date_matches)
-
+     
     
     # Upload student reports
     std_fnames = st.file_uploader("Upload (Multiple) Student PDF reports", accept_multiple_files=True, type="pdf")
     
         
-    if (st.button("Analyze")):
+    if (st.button("Compile Result")):
         
-        # Parse roadmap
-        #module_names, lessons, roadmap_matches = extract_roadmap_modules(st.session_state.consolidated_roadmap, st.session_state.refined_date_matches[0], st.session_state.refined_date_matches[-1])        
+        # Parse roadmap       
         module_names, lessons, roadmap_matches = extract_roadmap_modules(st.session_state.consolidated_roadmap, start_date, end_date)        
         
         total_lessons = int(len(roadmap_matches))
