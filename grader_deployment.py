@@ -95,6 +95,7 @@ def main():
     st.text("Previously, teachers had to laboriously go through each student report, use only specific modules from roadmap, and copy the test results of each lesson separately")
     st.text("Now, once the roadmap and student reports are uploaded, all this can be done with just a click of a button")
     
+    st.subheader('Uploading Roadmap')
     # Upload roadmap
     uploaded_roadmap = st.file_uploader("Upload Roadmap", accept_multiple_files = False, type = "pdf")
 
@@ -113,12 +114,13 @@ def main():
             st.session_state.consolidated_roadmap = consolidated_roadmap
             st.session_state.refined_date_matches = refined_date_matches
             st.session_state.sbox_index = len(refined_date_matches) - 1 
-            st.text("Roadmap Analyzed")
+            st.success("Roadmap Analyzed")
             
         except:
-            st.text("Sorry, we couldn't process the roadmap. Please ensure you have uploaded the correct roadmap file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
+            st.error("Sorry, we couldn't process the roadmap. Please ensure you have uploaded the correct roadmap file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
 
                     
+    st.subheader('Selecting Analysis Dates')
     
     start_date = st.selectbox("Analysis Start Date", st.session_state.refined_date_matches)
     end_date = st.selectbox("Analysis End Date (excluding)", st.session_state.refined_date_matches, 
@@ -128,7 +130,7 @@ def main():
     
 
      
-    
+    st.subheader('Analyzing Student Reports')
     # Upload student reports
     std_fnames = st.file_uploader("Upload (Multiple) Student PDF reports", accept_multiple_files=True, type="pdf")
     
@@ -159,6 +161,8 @@ def main():
 
                 frac_completed_modules[std_ind] = 100 * (total_lessons - num_missed )/ total_lessons
 
+            st.success("Finished analyzing student records")
+
             totals = np.array(totals)
 
             df_full_data = {'Name': names}
@@ -180,19 +184,20 @@ def main():
             df_disp.style.format(precision=0)
             st.table(df_disp)
 
+
             plot_df = pd.DataFrame({"Percentage Module Completion": frac_completed_modules})
 
 
             fig = px.histogram(plot_df, nbins = 5, barmode = 'group', title = 'Module Completion %')
 
 
-            st.text("Visualization of completed modules in your class")
+            st.info("Visualization of completed modules in your class")
 
             st.plotly_chart(fig)
 
             csv = convert_df(df_full)
-
-            st.text("You may now download the compiled student result")
+            
+            st.info("You may now download the compiled student result")
 
             st.download_button(
                "Download Compiled Result",
@@ -202,9 +207,9 @@ def main():
                key='download-csv'
             )
 
-            st.text("Privacy notice: The uploaded and generated data is deleted once page is refreshed")
+            st.info("Privacy notice: The uploaded and generated data is deleted once page is refreshed")
         except:
-            st.text("Sorry, we couldn't process the student reports. Please ensure you have uploaded the correct file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
+            st.error("Sorry, we couldn't process the student reports. Please ensure you have uploaded the correct file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
             
     
 if __name__ == "__main__":
