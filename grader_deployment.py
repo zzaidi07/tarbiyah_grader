@@ -21,8 +21,9 @@ def parse_roadmap(roadmap_file = 'roadmap.pdf'):
     date_pattern = r'\b[A-Za-z]+(?:\. ?| ?\.?| )?\d+\/'
     date_matches += re.findall(date_pattern, consolidated_roadmap)
     refined_date_matches = [] 
+    assert "Plan" in date_matches[0]
     for match in date_matches:
-        if "LessonPlan" not in match:
+        if "Plan" not in match:
             refined_date_matches += [match.split('/')[0]]
     return consolidated_roadmap, refined_date_matches
 
@@ -48,6 +49,7 @@ def parse_student_record(record_name, module_names, lessons):
         consolidated_student_record += reader.pages[page].extract_text()
     report_date = consolidated_student_record.splitlines()[0]
     student_name = consolidated_student_record.splitlines()[2]
+    assert "AM" in student_name
     test_marks = np.zeros(len(module_names))
     test_total = np.zeros(len(module_names))
     for lesson_ind, lesson in enumerate(lessons):
@@ -106,11 +108,17 @@ def main():
         st.session_state.sbox_index = 0
     
     if (st.button("Analyze Roadmap")):
-        consolidated_roadmap, refined_date_matches = parse_roadmap(uploaded_roadmap)
-        st.session_state.consolidated_roadmap = consolidated_roadmap
-        st.session_state.refined_date_matches = refined_date_matches
-        st.session_state.sbox_index = len(refined_date_matches) - 1 
-        st.text("Roadmap Analyzed")
+        try:
+            consolidated_roadmap, refined_date_matches = parse_roadmap(uploaded_roadmap)
+            st.session_state.consolidated_roadmap = consolidated_roadmap
+            st.session_state.refined_date_matches = refined_date_matches
+            st.session_state.sbox_index = len(refined_date_matches) - 1 
+            st.text("Roadmap Analyzed")
+            
+        except:
+            st.text("Sorry, we couldn't process the roadmap. Please ensure you have uploaded the correct roadmap file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
+
+                    
     
     start_date = st.selectbox("Analysis Start Date", st.session_state.refined_date_matches)
     end_date = st.selectbox("Analysis End Date (excluding)", st.session_state.refined_date_matches, 
@@ -136,65 +144,68 @@ def main():
         totals = []
         frac_completed_modules = np.zeros(len(std_fnames))
         
-        for std_ind, std_fname in enumerate(stqdm(std_fnames)):
-            csv_fname = std_fname.name.strip('.pdf') + '.csv'
+        try: 
+            for std_ind, std_fname in enumerate(stqdm(std_fnames)):
+                csv_fname = std_fname.name.strip('.pdf') + '.csv'
+
+                # Parse student report and extract relevant information
+                report_date, student_name, test_total, test_marks = parse_student_record(std_fname, module_names, lessons)
+
+                # Store relevant information for use later in table/plot/csv
+                names += [student_name]
+                scores[std_ind,:] = 100 * test_marks/test_total
+                totals += [100 * np.sum(test_marks/test_total) / len(lessons)]
+                num_missed = len(np.argwhere(test_marks == 0))
+
+                frac_completed_modules[std_ind] = 100 * (total_lessons - num_missed )/ total_lessons
+
+            totals = np.array(totals)
+
+            df_full_data = {'Name': names}
+            df_full_data['Total'] = totals  # Add the 'Total' column
+            for ind_module, module in enumerate(roadmap_matches):
+                df_full_data[module] = scores[:,ind_module]
+
+            df_full = pd.DataFrame(df_full_data)
+
+
+
+            df_disp = {'Name': names}
+            df_disp['Total Score'] = (totals)  # Add the 'Total' column
+            df_disp['% Module Completed'] = frac_completed_modules  # Add the 'Total' column
+
+            pd.set_option('display.float_format', '{:10.2f}'.format)
+
+            df_disp = pd.DataFrame(df_disp)
+            df_disp.style.format(precision=0)
+            st.table(df_disp)
+
+            plot_df = pd.DataFrame({"Percentage Module Completion": frac_completed_modules})
+
+
+            fig = px.histogram(plot_df, nbins = 5, barmode = 'group', title = 'Module Completion %')
+
+
+            st.text("Visualization of completed modules in your class")
+
+            st.plotly_chart(fig)
+
+            csv = convert_df(df_full)
+
+            st.text("You may now download the compiled student result")
+
+            st.download_button(
+               "Download Compiled Result",
+               csv,
+               "compiled_result.csv",
+               "text/csv",
+               key='download-csv'
+            )
+
+            st.text("Privacy notice: The uploaded and generated data is deleted once page is refreshed")
+        except:
+            st.text("Sorry, we couldn't process the student reports. Please ensure you have uploaded the correct file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
             
-            # Parse student report and extract relevant information
-            report_date, student_name, test_total, test_marks = parse_student_record(std_fname, module_names, lessons)
-            
-            # Store relevant information for use later in table/plot/csv
-            names += [student_name]
-            scores[std_ind,:] = 100 * test_marks/test_total
-            totals += [100 * np.sum(test_marks/test_total) / len(lessons)]
-            num_missed = len(np.argwhere(test_marks == 0))
-
-            frac_completed_modules[std_ind] = 100 * (total_lessons - num_missed )/ total_lessons
-
-        totals = np.array(totals)
-        
-        df_full_data = {'Name': names}
-        df_full_data['Total'] = totals  # Add the 'Total' column
-        for ind_module, module in enumerate(roadmap_matches):
-            df_full_data[module] = scores[:,ind_module]
-        
-        df_full = pd.DataFrame(df_full_data)
-        
-        
-
-        df_disp = {'Name': names}
-        df_disp['Total Score'] = (totals)  # Add the 'Total' column
-        df_disp['% Module Completed'] = frac_completed_modules  # Add the 'Total' column
-
-        pd.set_option('display.float_format', '{:10.2f}'.format)
-        
-        df_disp = pd.DataFrame(df_disp)
-        df_disp.style.format(precision=0)
-        st.table(df_disp)
-        
-        plot_df = pd.DataFrame({"Percentage Module Completion": frac_completed_modules})
-        
-
-        fig = px.histogram(plot_df, nbins = 5, barmode = 'group', title = 'Module Completion %')
-
-
-        st.text("Visualization of completed modules in your class")
-
-        st.plotly_chart(fig)
-        
-        csv = convert_df(df_full)
-        
-        st.text("You may now download the compiled student result")
-        
-        st.download_button(
-           "Download Compiled Result",
-           csv,
-           "compiled_result.csv",
-           "text/csv",
-           key='download-csv'
-        )
-        
-        st.text("Privacy notice: The uploaded and generated data is deleted once page is refreshed")
-
     
 if __name__ == "__main__":
     main()
