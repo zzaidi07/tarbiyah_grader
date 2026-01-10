@@ -18,10 +18,11 @@ def parse_roadmap(roadmap_file = 'roadmap.pdf'):
     date_matches = []
     for page in range(reader.get_num_pages()):
         consolidated_roadmap += reader.pages[page].extract_text()
-    date_pattern = r'\b[A-Za-z]+(?:\. ?| ?\.?| )?\d+\/'
+    # date_pattern = r'\b[A-Za-z]+(?:\. ?| ?\.?| )?\d+\/'
+    date_pattern = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d+(?:\s*/\s*\d+)?"
     date_matches += re.findall(date_pattern, consolidated_roadmap)
     refined_date_matches = [] 
-    assert "Plan" in date_matches[0]
+    # assert "Plan" in date_matches[0]
     for match in date_matches:
         if "Plan" not in match:
             refined_date_matches += [match.split('/')[0]]
@@ -114,7 +115,9 @@ def main():
             st.session_state.consolidated_roadmap = consolidated_roadmap
             st.session_state.refined_date_matches = refined_date_matches
             st.session_state.sbox_index = len(refined_date_matches) - 1 
+            
             st.success("Roadmap Analyzed")
+            # st.write(refined_date_matches)
             
         except:
             st.error("Sorry, we couldn't process the roadmap. Please ensure you have uploaded the correct roadmap file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
