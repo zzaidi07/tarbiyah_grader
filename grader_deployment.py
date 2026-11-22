@@ -19,13 +19,16 @@ def parse_roadmap(roadmap_file = 'roadmap.pdf'):
     for page in range(reader.get_num_pages()):
         consolidated_roadmap += reader.pages[page].extract_text()
     # date_pattern = r'\b[A-Za-z]+(?:\. ?| ?\.?| )?\d+\/'
-    date_pattern = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d+(?:\s*/\s*\d+)?"
+    
+    date_pattern = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\.?\s+\d+(?:\s*/\s*\d+)?"
     date_matches += re.findall(date_pattern, consolidated_roadmap)
     refined_date_matches = [] 
     # assert "Plan" in date_matches[0]
     for match in date_matches:
         if "Plan" not in match:
             refined_date_matches += [match.split('/')[0]]
+    
+    st.write(refined_date_matches)
     return consolidated_roadmap, refined_date_matches
 
 def extract_roadmap_modules(consolidated_roadmap, start_date, end_date):
@@ -50,7 +53,7 @@ def parse_student_record(record_name, module_names, lessons):
         consolidated_student_record += reader.pages[page].extract_text()
     report_date = consolidated_student_record.splitlines()[0]
     student_name = consolidated_student_record.splitlines()[2]
-    assert "AM" in student_name
+    # assert "AM" in student_name
     test_marks = np.zeros(len(module_names))
     test_total = np.zeros(len(module_names))
     for lesson_ind, lesson in enumerate(lessons):
