@@ -27,8 +27,6 @@ def parse_roadmap(roadmap_file = 'roadmap.pdf'):
     for match in date_matches:
         if "Plan" not in match:
             refined_date_matches += [match.split('/')[0]]
-    
-    st.write(refined_date_matches)
     return consolidated_roadmap, refined_date_matches
 
 def extract_roadmap_modules(consolidated_roadmap, start_date, end_date):
@@ -190,16 +188,63 @@ def main():
             df_disp.style.format(precision=0)
             st.table(df_disp)
 
+            df_top = (
+                df_disp[['Name', '% Module Completed']]
+                .sort_values('% Module Completed', ascending=False)
+                .head(5)
+                .reset_index(drop=True)
+            )
+            st.subheader('Top 5 Students by Module Completion')
+            st.table(df_top)
+
 
             plot_df = pd.DataFrame({"Percentage Module Completion": frac_completed_modules})
+            completion_bins = [0, 20, 40, 60, 80, 100]
+            completion_labels = ["0–20%", "20–40%", "40–60%", "60–80%", "80–100%"]
+            plot_df["Completion range"] = pd.cut(
+                plot_df["Percentage Module Completion"],
+                bins=completion_bins,
+                labels=completion_labels,
+                include_lowest=True,
+            )
+            completion_counts = (
+                plot_df["Completion range"]
+                .value_counts()
+                .reindex(completion_labels, fill_value=0)
+                .rename_axis("Completion range")
+                .reset_index(name="Students")
+            )
 
-
-            fig = px.histogram(plot_df, nbins = 5, barmode = 'group', title = 'Module Completion %')
-
+            fig = px.bar(
+                completion_counts,
+                x="Completion range",
+                y="Students",
+                text="Students",
+                color="Completion range",
+                color_discrete_sequence=["#C45C4A", "#E08A3C", "#E6C35C", "#7BAF6A", "#1F6B4A"],
+                title="Module completion across the class",
+            )
+            fig.update_traces(
+                textposition="outside",
+                hovertemplate="%{x}<br>%{y} students<extra></extra>",
+                marker_line_color="white",
+                marker_line_width=1,
+            )
+            fig.update_layout(
+                template="plotly_white",
+                showlegend=False,
+                bargap=0.25,
+                xaxis_title="Module completion",
+                yaxis_title="Number of students",
+                yaxis=dict(rangemode="tozero"),
+                title=dict(x=0, xanchor="left"),
+                margin=dict(t=60, b=40, l=40, r=20),
+                font=dict(size=14),
+            )
 
             st.info("Visualization of completed modules in your class")
 
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True)
 
             csv = convert_df(df_full)
             
