@@ -260,7 +260,7 @@ def main():
 
             st.info("Privacy notice: The uploaded and generated data is deleted once page is refreshed")
         except:
-            st.error("Sorry, we couldn't process the student reports. Please ensure you have uploaded the correct file. We encourage you to submit a bug report to: Tarbiyyaguide.sun@al-muntadhir.ca")
+            st.error("Sorry, we couldn't process the student reports. Please ensure you have uploaded the correct file. We encourage you to submit a bug report to: zain.zaidi@al-asr.ca")
             
     
 if __name__ == "__main__":
